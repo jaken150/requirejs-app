@@ -1,0 +1,47 @@
+.tip {
+    position: relative;
+    top: 20px;
+    background-image: url(../images/yct_card.jpg);
+    width: 230px;
+    height: 155px;
+    background-size: 100%;
+    background-repeat: no-repeat;
+    display: block;
+    margin: 0 auto;
+}
+
+
+.div_card_list_item {
+    top: 25px;
+    height: 170px;
+    position: relative;
+    /*border: green;*/
+    /*border-bottom: solid darkgray;*/
+    /*background: url(../images/yct_card_half.jpg) no-repeat;*/
+    /*background-size: 80% auto;*/
+    /*background-position: center bottom;*/
+    /*height: 200px;*/
+}
+
+.div_card_list_item img{
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    margin-left: -115px;
+    width: 230px;
+    height: 155px;
+    /*border-bottom: solid darkgray;*/
+    /*background: url(../images/yct_card_half.jpg) no-repeat;*/
+    /*background-size: 80% auto;*/
+    /*background-position: center bottom;*/
+    /*height: 200px;*/
+}
+
+.card_list_td_div {
+    /*border: solid;*/
+    text-align: center;
+    position: relative;
+    margin: 0;
+    color:white;
+    font-weight: bold
+}

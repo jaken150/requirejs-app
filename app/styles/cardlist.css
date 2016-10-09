@@ -1,0 +1,60 @@
+table {
+    /*border: solid;*/
+    /*border-color: red;*/
+    width: 100%;
+    height: 200px;
+    margin-bottom: 50px;
+
+}
+
+
+.div_card_list_item {
+    top: 25px;
+    height: 80px;
+    position: relative;
+    /*border: green;*/
+    border-bottom: solid darkgray;
+    /*background: url(../images/yct_card_half.jpg) no-repeat;*/
+    /*background-size: 80% auto;*/
+    /*background-position: center bottom;*/
+    /*height: 200px;*/
+}
+
+.div_card_list_item img{
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    margin-left: -100px;
+    width: 200px;
+    height: 80px;
+    /*border-bottom: solid darkgray;*/
+    /*background: url(../images/yct_card_half.jpg) no-repeat;*/
+    /*background-size: 80% auto;*/
+    /*background-position: center bottom;*/
+    /*height: 200px;*/
+}
+
+.card_list_td_div {
+    /*border: solid;*/
+    text-align: center;
+    position: relative;
+    margin: 0;
+    color:white;
+    font-weight: bold
+}
+
+.bottom_div {
+    background-color: white;
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    padding-bottom: 5px;
+    padding-top: 20px;
+
+}
+
+.bottom_div_text {
+    font-size: small;
+    color: darkgray;
+    padding-left: 10px;
+}

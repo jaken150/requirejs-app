@@ -1,0 +1,24 @@
+.logo {
+    background-image: url(../images/logo.png);
+    width: 100px;
+    height: 100px;
+    background-size: 100%;
+    display: block;
+    margin: 0 auto;
+}
+.tip {
+    background-image: url(../images/yct_card.jpg);
+    width: 300px;
+    height: 180px;
+    background-size: 100%;
+    display: block;
+    margin: 0 auto;
+}
+.card_half {
+    background-image: url(../images/yct_card_half.jpg);
+    width: 100px;
+    height: 100px;
+    background-size: 100%;
+    display: block;
+    margin: 0 auto;
+}

@@ -1,0 +1,32 @@
+<br>
+<span class="logo"></span>
+<div class="hd">
+    <div class="weui_cells_title">请先进行卡片绑定操作</div>
+    <div class="weui_cells_title">openid: {{openid}}</div>
+    <div class="weui_cells weui_cells_form">
+        <div class="weui_cell ">
+            <div class="weui_cell_hd"><label class="weui_label">卡号</label></div>
+            <div class="weui_cell_bd weui_cell_primary">
+                <input class="weui_input" type="tel" maxlength="10"
+                       placeholder="请输入10位羊城通卡号"/>
+            </div>
+        </div>
+    </div>
+    <br>
+    <a href="javascript:;" class="weui_btn weui_btn_primary">确定</a>
+    <br>
+    <span class="tip"></span>
+</div>
+<script>
+    function get_openid() {
+        $http.get('/wxapitest/wxopenid',{ cache: true })
+                .success(function(data) {
+                    alert('success')
+                })
+                .error(function(data) {
+                    alert('error')
+                });
+
+    }
+    get_openid();
+</script>

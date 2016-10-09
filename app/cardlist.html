@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html ng-app="myCardListApp">
+<head>
+    <title>卡片列表</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport"
+          content="width=device-width,height=device-height,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="scripts/vendor/angular.min.js"></script>
+    <script src="scripts/vendor/angular-cookies.js"></script>
+    <script src="scripts/vendor/angular-route.min.js"></script>
+    <script src="scripts/vendor/angular-utf8-base64.js"></script>
+    <script src="scripts/vendor/angular-md5.js"></script>
+    <script src="scripts/yct-http-service.js"></script>
+
+    <base href="">
+    <link rel="stylesheet" href="styles/weui.css">
+    <link rel="stylesheet" href="styles/example.css">
+    <link rel="stylesheet" href="styles/cardlist.css">
+    <script>
+        var myCardListAppModule = angular.module('myCardListApp', ['ngCookies','ab-base64', 'angular-md5', 'yct-http-service', 'ngRoute']);
+        //        myCardListAppModule.config(function($routeProvider){
+        //            $routeProvider
+        //                    .when('/bindcard',{
+        //                        templateUrl: 'cardbind.html' //链接对应的html文件
+        //                    })
+        //                    .otherwise({
+        //                        redircTo: 'cardlist.html'
+        //                    })
+        //        });
+        myCardListAppModule.controller('CardListCtrl', function ($scope, $cookies, $location, $log, $window, PostService) {
+
+            $scope.debug = true;
+            if ($scope.debug) {
+                $cookies.put('openid', 'o8LLmv08Lpbh67RKjVtv_A2tnoKg');
+            }
+
+            //初始化所有提示窗口的显示状态
+            $scope.isActive = false;//确定按钮状态控制变量
+            $scope.myDialog2Show = false;
+            $scope.myToastShow = false;
+            $scope.myLoadingToastShow = false;
+
+//            $scope.card_list = {list: ['0001', '0002', '0003']};
+//            $scope.card_list = {list: ['0001', '0002', '0003', '0004', '0005', '0006']};
+
+
+            $scope.myLoadingToastText = '正在查询';
+            $scope.myLoadingToastShow = true;
+            var promise = PostService.CardQuery(2, "0");
+            promise.then(function (data) {
+                console.log('CardBind promise Success: ');
+                $scope.myLoadingToastShow = false;
+                var jsonData = JSON.parse(data);
+                $scope.card_num_list = jsonData.card_num_list;
+                if (jsonData.card_num_list == null || jsonData.card_num_list.length == 0) {
+                    $scope.redirect_bindcard = true;
+                    $scope.myDialog2Title = '提示';
+                    $scope.myDialog2Text = jsonData.errmsg;
+                    $scope.myDialog2Show = true;
+                }
+                if (jsonData.card_num_list.length < 3) {
+                    $scope.isActive = true;
+                } else {
+                    $scope.myDialog2Title = '提示';
+                    $scope.myDialog2Text = '目前最多绑定3张卡片';
+                    $scope.myDialog2Show = true;
+
+                }
+            }, function (data) {
+                console.log('CardBind promise Failed: ');
+                console.log(data);
+                $scope.myLoadingToastShow = false;
+                $scope.myToastText = data;
+                $scope.myToastShow = true;
+            });
+
+            $scope.dialogClick = function () {
+                $scope.myDialog2Show = false;
+                if ($scope.redirect_bindcard) {
+                    var url = "http://" + $window.location.host + "/requirejs-app/app/bindcard.html";
+                    $log.log(url);
+                    $window.location.href = url;
+                }
+            };
+
+            $scope.confirmClick = function () {
+                if(!$scope.isActive){
+                    return;
+                }
+                var url = "http://" + $window.location.host + "/requirejs-app/app/bindcard.html";
+                $log.log(url);
+                $window.location.href = url;
+            }
+
+            $scope.redirect_cardinfo = function (card_num) {
+                var url = "http://" + $window.location.host + "/requirejs-app/app/cardinfo.html?card_num="+card_num;
+                $log.log(url);
+                $window.location.href = url;
+            }
+        })
+    </script>
+</head>
+<body ng-controller="CardListCtrl">
+<br>
+<table>
+    <tr ng-repeat="item in card_num_list">
+        <td  >
+            <div class="div_card_list_item">
+                <img ng-click="redirect_cardinfo(item)" src="images/yct_card_half.jpg">
+            </div>
+
+            <div class="card_list_td_div">{{item}}</div>
+        </td>
+    </tr>
+</table>
+<br>
+<br>
+<div class="bottom_div">
+    <button ng-click="confirmClick()"
+            ng-class="{true:'weui_btn weui_btn_primary',false:'weui_btn weui_btn_disabled weui_btn_primary'}[isActive]">
+        添加新卡
+    </button>
+    <span class="bottom_div_text">注: 最多添加3张卡片</span>
+</div>
+<div ng-include="'weui_component.html'"></div>
+</body>
+</html>
