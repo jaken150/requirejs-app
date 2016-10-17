@@ -7,6 +7,16 @@ table {
 
 }
 
+.card_list_remark_td_div {
+
+    bottom: 80px;
+    position: relative;
+    /*border: green;*/
+    /*background: url(../images/yct_card_half.jpg) no-repeat;*/
+    /*background-size: 80% auto;*/
+    /*background-position: center bottom;*/
+    /*height: 200px;*/
+}
 
 .div_card_list_item {
     top: 25px;
@@ -19,6 +29,8 @@ table {
     /*background-position: center bottom;*/
     /*height: 200px;*/
 }
+
+
 
 .div_card_list_item img{
     position: absolute;
@@ -34,7 +46,9 @@ table {
     /*height: 200px;*/
 }
 
-.card_list_td_div {
+
+
+.card_list_num_td_div {
     /*border: solid;*/
     text-align: center;
     position: relative;

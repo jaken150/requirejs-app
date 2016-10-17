@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html ng-app="myCardListApp">
 <head>
-    <title>卡片列表</title>
+    <title>卡片列表t2</title>
     <meta charset="utf-8"/>
     <meta name="viewport"
           content="width=device-width,height=device-height,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -9,7 +9,7 @@
     <script src="scripts/vendor/angular-cookies.js"></script>
     <script src="scripts/vendor/angular-route.min.js"></script>
     <script src="scripts/vendor/angular-utf8-base64.js"></script>
-    <script src="scripts/vendor/angular-md5.js"></script>
+    <script src="scripts/vendor/md5.js"></script>
     <script src="scripts/yct-http-service.js"></script>
 
     <base href="">
@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="styles/example.css">
     <link rel="stylesheet" href="styles/cardlist.css">
     <script>
-        var myCardListAppModule = angular.module('myCardListApp', ['ngCookies','ab-base64', 'angular-md5', 'yct-http-service', 'ngRoute']);
+        var myCardListAppModule = angular.module('myCardListApp', ['ngCookies', 'ab-base64', 'yct-http-service', 'ngRoute']);
         //        myCardListAppModule.config(function($routeProvider){
         //            $routeProvider
         //                    .when('/bindcard',{
@@ -27,11 +27,136 @@
         //                        redircTo: 'cardlist.html'
         //                    })
         //        });
-        myCardListAppModule.controller('CardListCtrl', function ($scope, $cookies, $location, $log, $window, PostService) {
+        myCardListAppModule.config(['$locationProvider', '$httpProvider', function ($locationProvider, $httpProvider) {
+            $locationProvider.html5Mode({
+                enabled: true,
+                requireBase: false
+            });
+            //默认超时30秒
+            $httpProvider.defaults.timeout = 30000;
+        }]);
 
-            $scope.debug = true;
+        myCardListAppModule.directive('onLongPress', function ($timeout) {
+            return {
+                restrict: 'A',
+                link: function ($scope, $elm, $attrs) {
+                    $elm.bind('touchstart', function (evt) {
+                        // Locally scoped variable that will keep track of the long press
+                        $scope.longPress = true;
+
+                        // We'll set a timeout for 600 ms for a long press
+                        $timeout(function () {
+                            if ($scope.longPress) {
+                                // If the touchend event hasn't fired,
+                                // apply the function given in on the element's on-long-press attribute
+                                $scope.$apply(function () {
+                                    $scope.$eval($attrs.onLongPress)
+                                });
+                            }
+                        }, 600);
+                    });
+
+                    $elm.bind('touchend', function (evt) {
+                        // Prevent the onLongPress event from firing
+                        $scope.longPress = false;
+                        // If there is an on-touch-end function attached to this element, apply it
+                        if ($attrs.onTouchEnd) {
+                            $scope.$apply(function () {
+                                $scope.$eval($attrs.onTouchEnd)
+                            });
+                        }
+                    });
+                }
+            };
+        });
+
+        myCardListAppModule.controller('CardListCtrl', function ($scope, $cookies, $location, $log, $window, GetService, PostService) {
+
+//            $cookies.remove('openid');
+            $scope.debug = false;
             if ($scope.debug) {
-                $cookies.put('openid', 'o8LLmv08Lpbh67RKjVtv_A2tnoKg');
+                $cookies.put('openid', 'oKYOJj08Lpbh67RKjVtv_A2tnoKg');
+            }
+
+            //判断是否有openid的cookies
+            $scope.openid = $cookies.get('openid');
+            console.log('openid:');
+            console.log($scope.openid);
+            if ($scope.openid == undefined) {//判断cookies中是否有openid,没有则通过网络获取
+                var promise = GetService.getOpenid();
+                promise.then(function (data) {
+                    console.log('getOpenid promise Success: ');
+                    $scope.openid = data.openid;
+                    $cookies.put('openid', $scope.openid);
+                    $scope.isActive = true;
+                    $scope.myLoadingToastShow = false;
+
+                    $scope.myLoadingToastText = '正在查询';
+                    $scope.myLoadingToastShow = true;
+                    var promise = PostService.CardQuery(2, "0");
+                    promise.then(function (jsonData) {
+                        console.log('CardBind promise Success: ');
+                        $scope.myLoadingToastShow = false;
+                        $scope.card_num_list = jsonData.card_num_list;
+                        $scope.card_remark_list = jsonData.card_remark_list;
+                        if (jsonData.card_num_list == null || jsonData.card_num_list.length == 0) {
+                            $scope.myDialog2 = REDIRCT_TO_BINDCARD;
+//                    $scope.myDialog2Title = '提示';
+                            $scope.myDialog2Text = jsonData.errmsg;
+                            $scope.myDialog2Show = true;
+                        }
+                        if (jsonData.card_num_list.length < 3) {
+                            $scope.isActive = true;
+                        } else {
+//                    $scope.myDialog2Title = '提示';
+                            $scope.myDialog2Text = '目前最多绑定 3 张卡片';
+                            $scope.myDialog2Show = true;
+                        }
+                    }, function (data) {
+                        console.log('CardBind promise Failed: ');
+                        console.log(data);
+                        $scope.myLoadingToastShow = false;
+                        $scope.myToastText = data;
+                        $scope.myToastShow = true;
+                    });
+
+                }, function (data) {
+                    console.log('getOpenid promise Failed: ');
+                    $scope.openid = data;
+                    $scope.myLoadingToastShow = false;
+                    $scope.myToastText = $scope.text.getOpenidError;
+                    $scope.myToastShow = true;
+                });
+            } else {
+                $scope.isActive = true;
+                $scope.myLoadingToastText = '正在查询';
+                $scope.myLoadingToastShow = true;
+                var promise = PostService.CardQuery(2, "0");
+                promise.then(function (jsonData) {
+                    console.log('CardBind promise Success: ');
+                    $scope.myLoadingToastShow = false;
+                    $scope.card_num_list = jsonData.card_num_list;
+                    $scope.card_remark_list = jsonData.card_remark_list;
+                    if (jsonData.card_num_list == null || jsonData.card_num_list.length == 0) {
+                        $scope.myDialog2 = REDIRCT_TO_BINDCARD;
+//                    $scope.myDialog2Title = '提示';
+                        $scope.myDialog2Text = jsonData.errmsg;
+                        $scope.myDialog2Show = true;
+                    }
+                    if (jsonData.card_num_list.length < 3) {
+                        $scope.isActive = true;
+                    } else {
+//                    $scope.myDialog2Title = '提示';
+                        $scope.myDialog2Text = '目前最多绑定 3 张卡片';
+                        $scope.myDialog2Show = true;
+                    }
+                }, function (data) {
+                    console.log('CardBind promise Failed: ');
+                    console.log(data);
+                    $scope.myLoadingToastShow = false;
+                    $scope.myToastText = data;
+                    $scope.myToastShow = true;
+                });
             }
 
             //初始化所有提示窗口的显示状态
@@ -39,64 +164,70 @@
             $scope.myDialog2Show = false;
             $scope.myToastShow = false;
             $scope.myLoadingToastShow = false;
+            $scope.myDialog1Show = false;
+
+            $scope.myDialog2 = 0;
+            var REDIRCT_TO_BINDCARD = 1;
+            var RELOAD_CARDLIST = 2;
 
 //            $scope.card_list = {list: ['0001', '0002', '0003']};
 //            $scope.card_list = {list: ['0001', '0002', '0003', '0004', '0005', '0006']};
 
 
-            $scope.myLoadingToastText = '正在查询';
-            $scope.myLoadingToastShow = true;
-            var promise = PostService.CardQuery(2, "0");
-            promise.then(function (data) {
-                console.log('CardBind promise Success: ');
-                $scope.myLoadingToastShow = false;
-                var jsonData = JSON.parse(data);
-                $scope.card_num_list = jsonData.card_num_list;
-                if (jsonData.card_num_list == null || jsonData.card_num_list.length == 0) {
-                    $scope.redirect_bindcard = true;
-                    $scope.myDialog2Title = '提示';
-                    $scope.myDialog2Text = jsonData.errmsg;
-                    $scope.myDialog2Show = true;
-                }
-                if (jsonData.card_num_list.length < 3) {
-                    $scope.isActive = true;
-                } else {
-                    $scope.myDialog2Title = '提示';
-                    $scope.myDialog2Text = '目前最多绑定3张卡片';
-                    $scope.myDialog2Show = true;
-
-                }
-            }, function (data) {
-                console.log('CardBind promise Failed: ');
-                console.log(data);
-                $scope.myLoadingToastShow = false;
-                $scope.myToastText = data;
-                $scope.myToastShow = true;
-            });
-
-            $scope.dialogClick = function () {
+            $scope.dialog2Confirm = function () {
                 $scope.myDialog2Show = false;
-                if ($scope.redirect_bindcard) {
-                    var url = "http://" + $window.location.host + "/requirejs-app/app/bindcard.html";
+                if ($scope.myDialog2 == REDIRCT_TO_BINDCARD) {
+                    var url = "http://" + $window.location.host + "/requirejs-app/app/cardbind.html";
                     $log.log(url);
                     $window.location.href = url;
+                } else if ($scope.myDialog2 == RELOAD_CARDLIST) {
+                    $window.location.reload();
                 }
             };
 
             $scope.confirmClick = function () {
-                if(!$scope.isActive){
+                if (!$scope.isActive) {
                     return;
                 }
-                var url = "http://" + $window.location.host + "/requirejs-app/app/bindcard.html";
+                var url = "http://" + $window.location.host + "/requirejs-app/app/cardbind.html";
                 $log.log(url);
                 $window.location.href = url;
-            }
+            };
 
-            $scope.redirect_cardinfo = function (card_num) {
-                var url = "http://" + $window.location.host + "/requirejs-app/app/cardinfo.html?card_num="+card_num;
+            $scope.redirect_cardinfo = function (card_num, index) {
+                $log.debug("index = " + index);
+                var url = "http://" + $window.location.host + "/requirejs-app/app/cardinfo.html?card_num=" + card_num + "&remark=" + $scope.card_remark_list[index];
                 $log.log(url);
                 $window.location.href = url;
-            }
+            };
+            $scope.itemOnLongPress = function (item) {
+                $scope.card_num = item;
+                $scope.myDialog1Text = "确定取消绑定卡片" + item;
+                $scope.myDialog1Show = true;
+
+            };
+            $scope.dialog1Confirm = function () {
+                $scope.myDialog1Show = false;
+                $scope.myLoadingToastShow = true;
+                var promise_del = PostService.CardBind(-1, $scope.card_num, "");
+                promise_del.then(function (jsonData) {
+                    console.log('CardBind del promise Success: ');
+                    $scope.myLoadingToastShow = false;
+                    $scope.myDialog2Text = "删除成功";
+                    $scope.myDialog2Show = true;
+                    $scope.myDialog2 = RELOAD_CARDLIST;
+
+                }, function (jsonData) {
+                    console.log('CardBind del promise Failed: ');
+                    console.log(data);
+                    $scope.myLoadingToastShow = false;
+                    $scope.myToastText = data;
+                    $scope.myToastShow = true;
+                })
+            };
+            $scope.dialog1Cancel = function () {
+                $scope.myDialog1Show = false;
+            };
         })
     </script>
 </head>
@@ -104,12 +235,17 @@
 <br>
 <table>
     <tr ng-repeat="item in card_num_list">
-        <td  >
+        <td>
+
             <div class="div_card_list_item">
-                <img ng-click="redirect_cardinfo(item)" src="images/yct_card_half.jpg">
+                <img ng-click="redirect_cardinfo(item,$index)" on-long-press="itemOnLongPress(item)"
+                     src="images/yct_card_half.jpg">
             </div>
 
-            <div class="card_list_td_div">{{item}}</div>
+            <div class="card_list_num_td_div">{{item}}</div>
+            <div class="card_list_remark_td_div">
+                <h3 style="text-align: center;color: #ffffff;">{{card_remark_list[$index]}}</h3>
+            </div>
         </td>
     </tr>
 </table>
@@ -120,7 +256,7 @@
             ng-class="{true:'weui_btn weui_btn_primary',false:'weui_btn weui_btn_disabled weui_btn_primary'}[isActive]">
         添加新卡
     </button>
-    <span class="bottom_div_text">注: 最多添加3张卡片</span>
+    <span class="bottom_div_text">注: 最多添加3张卡片; 长按可取消绑定卡片{{openid}}</span>
 </div>
 <div ng-include="'weui_component.html'"></div>
 </body>

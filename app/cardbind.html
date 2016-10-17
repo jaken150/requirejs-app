@@ -9,7 +9,7 @@
     <script src="scripts/vendor/angular.js"></script>
     <script src="scripts/vendor/angular-cookies.js"></script>
     <script src="scripts/vendor/angular-utf8-base64.js"></script>
-    <script src="scripts/vendor/angular-md5.js"></script>
+    <script src="scripts/vendor/md5.js"></script>
     <script src="scripts/yct-http-service.js"></script>
 
     <base href="">
@@ -20,7 +20,7 @@
 </head>
 
 <script>
-    var myAppModule = angular.module('myApp', ['ngCookies', 'ab-base64', 'angular-md5','yct-http-service']);
+    var myAppModule = angular.module('myApp', ['ngCookies', 'ab-base64','yct-http-service']);
 
     myAppModule.config(['$locationProvider', '$httpProvider', function ($locationProvider, $httpProvider) {
         $locationProvider.html5Mode({
@@ -33,11 +33,6 @@
 
 
     myAppModule.controller('MainCtrl', function ($scope, $cookies, $timeout, GetService,$window,$log, PostService) {
-
-        $scope.debug = true;
-        if ($scope.debug) {
-            $cookies.put('openid', 'o8LLmv08Lpbh67RKjVtv_A2tnoKg');
-        }
 
         //初始化所有提示窗口的显示状态
         $scope.isActive = false;//确定按钮状态控制变量
@@ -81,17 +76,17 @@
                     return;
                 }
 
-                var promise = PostService.CardBind(1,$scope.card_num);
+                var promise = PostService.CardBind(1,$scope.card_num,"");
                 promise.then(function (data) {
                     console.log('CardBind promise Success: ');
                     $scope.redirect_cardlist = true;
-                    $scope.myDialog2Title = '提示';
+//                    $scope.myDialog2Title = '提示';
                     $scope.myDialog2Text = '绑定成功';
                     $scope.myDialog2Show = true;
                 }, function (data) {
                     console.log('CardBind promise Failed: ');
                     console.log(data);
-                    $scope.myDialog2Title = '提示';
+//                    $scope.myDialog2Title = '提示';
                     $scope.myDialog2Text = data;
                     $scope.myDialog2Show = true;
 
@@ -111,7 +106,7 @@
             }
         };
 
-        $scope.dialogClick = function () {
+        $scope.dialog2Confirm = function () {
             $scope.myDialog2Show = false;
             if($scope.redirect_cardlist){
                 var url = "http://" + $window.location.host + "/requirejs-app/app/cardlist.html";

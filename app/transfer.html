@@ -9,15 +9,17 @@
     <script src="scripts/vendor/angular-cookies.js"></script>
     <script src="scripts/vendor/angular-route.min.js"></script>
     <script src="scripts/vendor/angular-utf8-base64.js"></script>
-    <script src="scripts/vendor/angular-md5.js"></script>
+    <script src="scripts/vendor/md5.js"></script>
     <script src="scripts/yct-http-service.js"></script>
+    <script src="https://res.wx.qq.com/open/js/jweixin-1.0.0.js"></script>
+
 
     <base href="">
     <link rel="stylesheet" href="styles/weui.css">
     <link rel="stylesheet" href="styles/example.css">
     <link rel="stylesheet" href="styles/transfer.css">
     <script>
-        var myTransferAppModule = angular.module('myTransferApp', ['ngCookies', 'ab-base64', 'angular-md5', 'yct-http-service', 'ngRoute']);
+        var myTransferAppModule = angular.module('myTransferApp', ['ngCookies', 'ab-base64', 'yct-http-service', 'ngRoute']);
         //        myCardListAppModule.config(function($routeProvider){
         //            $routeProvider
         //                    .when('/bindcard',{
@@ -38,17 +40,48 @@
 
             $scope.debug = true;
             if ($scope.debug) {
-                $cookies.put('openid', 'o8LLmv08Lpbh67RKjVtv_A2tnoKg');
+                $cookies.put('openid', 'oKYOJjhclgu5aDKoHFbG7xLnwZb4');
             }
 
-            //初始化所有提示窗口的显示状态
-            $scope.isActive = false;//确定按钮状态控制变量
             $scope.myDialog2Show = false;
             $scope.myToastShow = false;
-            $scope.myLoadingToastShow = false;
+            $scope.myLoadingToastShow = true;
 
             $scope.card_num = $location.search().card_num;
             $scope.remark = $location.search().remark;
+
+            var promise = PostService.WxConfig($location.absUrl(), false);
+            promise.then(function (jsonData) {
+                $scope.myLoadingToastShow = false;
+                console.log('WxConfig promise Success: ');
+                $scope.myLoadingToastShow = false;
+                wx.config({
+                    debug: true,
+                    appId: jsonData.appid,
+                    timestamp: jsonData.timestamp,
+                    nonceStr: jsonData.nonceStr,
+                    signature: jsonData.signature,
+                    jsApiList: ['chooseWXPay']
+                });
+
+                wx.ready(function () {
+                    console.log('wx.ready');
+                });
+
+                wx.error(function (res) {
+                    console.log('wx.error');
+                    console.log('res');
+                });
+
+            }, function (data) {
+                $scope.myLoadingToastShow = false;
+                console.log('WxConfig promise Failed: ');
+                console.log(data);
+                $scope.myLoadingToastShow = false;
+                $scope.myToastText = data;
+                $scope.myToastShow = true;
+            });
+
 
 //            $scope.card_list = {list: ['0001', '0002', '0003']};
 //            $scope.card_list = {list: ['0001', '0002', '0003', '0004', '0005', '0006']};
@@ -84,26 +117,72 @@
 //                $scope.myToastShow = true;
 //            });
 
-            $scope.dialogClick = function () {
+            $scope.dialog2Confirm = function () {
                 $scope.myDialog2Show = false;
-                if ($scope.redirect_bindcard) {
-                    var url = "http://" + $window.location.host + "/requirejs-app/app/bindcard.html";
-                    $log.log(url);
-                    $window.location.href = url;
-                }
+//                if ($scope.redirect_bindcard) {
+//                    var url = "http://" + $window.location.host + "/requirejs-app/app/bindcard.html";
+//                    $log.log(url);
+//                    $window.location.href = url;
+//                }
             };
 
             $scope.confirmClick = function () {
                 if ($scope.amount == 0) {
                     return;
                 }
-                alert('充值金额'+$scope.amount);
+                $scope.myLoadingToastShow = true;
+
+                var promise_UnifiedOrder = PostService.UnifiedOrder("1",$scope.card_num,"1",$scope.amount,false);
+                promise_UnifiedOrder.then(function (jsonData) {
+                    $log.debug(jsonData);
+                    $log.debug("orderid："+jsonData.orderid);
+                    var promise_PaymentCreate = PostService.PaymentCreate(jsonData.orderid);
+                    promise_PaymentCreate.then(function (jsonData) {
+//                        $log.debug(jsonData.wxRet.timestamp);
+//                        $log.debug("wxRet._package");
+//                        $log.debug(jsonData.wxRet._package);
+//                        $log.debug("wxRet[_package]");
+//                        $log.debug(jsonData.wxRet["_package"]);
+
+                        wx.chooseWXPay({
+                            timestamp: jsonData.wxRet.timestamp,
+                            nonceStr: jsonData.wxRet.nonceStr,
+                            package: jsonData.wxRet["_package"],
+                            signType: jsonData.wxRet.signType,
+                            paySign: jsonData.wxRet.paySign,
+                            success: function (res) {
+                                alert("支付成功");
+                            },
+                            cancel: function (res) {
+                                alert("支付取消");
+                            },
+                            fail: function (res) {
+                                alert("支付失败");
+                            }
+                        });
+
+                    }, function (jsonData) {
+                        $scope.myLoadingToastShow = false;
+//                        $scope.myDialog2Title = '提示';
+                        $scope.myDialog2Text = jsonData;
+                        $scope.myDialog2Show = true;
+                    })
+
+
+                }, function (jsonData) {
+                    $scope.myLoadingToastShow = false;
+//                    $scope.myDialog2Title = '提示';
+                    $scope.myDialog2Text = jsonData;
+                    $scope.myDialog2Show = true;
+                });
             };
 
             $scope.amount = 0;
             $scope.chooseAmount = function (amount) {
                 $scope.amount = amount;
-            }
+            };
+
+
         })
     </script>
 </head>
@@ -127,24 +206,32 @@
             </button>
         </td>
         <td class="td_btn_amount">
-            <button ng-click="chooseAmount(10000)" ng-class="amount==10000 ? 'weui_btn weui_btn_plain_primary':'weui_btn weui_btn_plain_default'">
-                100元</button>
+            <button ng-click="chooseAmount(10000)"
+                    ng-class="amount==10000 ? 'weui_btn weui_btn_plain_primary':'weui_btn weui_btn_plain_default'">
+                100元
+            </button>
         </td>
         <td class="td_btn_amount">
-            <button ng-click="chooseAmount(20000)" ng-class="amount==20000 ? 'weui_btn weui_btn_plain_primary':'weui_btn weui_btn_plain_default'">
-                200元</button>
+            <button ng-click="chooseAmount(20000)"
+                    ng-class="amount==20000 ? 'weui_btn weui_btn_plain_primary':'weui_btn weui_btn_plain_default'">
+                200元
+            </button>
         </td>
         <td class="td_btn_amount">
-            <button ng-click="chooseAmount(30000)" ng-class="amount==30000 ? 'weui_btn weui_btn_plain_primary':'weui_btn weui_btn_plain_default'">
-                300元</button>
+            <button ng-click="chooseAmount(30000)"
+                    ng-class="amount==30000 ? 'weui_btn weui_btn_plain_primary':'weui_btn weui_btn_plain_default'">
+                300元
+            </button>
         </td>
     </tr>
 </table>
 <table style="width:28%;padding: 10px">
     <tr>
         <td class="td_btn_amount">
-            <button ng-click="chooseAmount(1)" ng-class="amount==1 ? 'weui_btn weui_btn_plain_primary':'weui_btn weui_btn_plain_default'">
-                1分</button>
+            <button ng-click="chooseAmount(1)"
+                    ng-class="amount==1 ? 'weui_btn weui_btn_plain_primary':'weui_btn weui_btn_plain_default'">
+                1分
+            </button>
         </td>
     </tr>
 </table>
