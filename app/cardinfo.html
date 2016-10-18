@@ -45,6 +45,10 @@
 
             $scope.card_num = $location.search().card_num;
             $scope.remark = $location.search().remark;
+            $log.debug("remark:");
+            if($scope.remark == undefined || $scope.remark == null || $scope.remark == "null" ||  $scope.remark == "undefined" ){
+                $scope.remark = "";
+            }
 
 //            $scope.card_list = {list: ['0001', '0002', '0003']};
 //            $scope.card_list = {list: ['0001', '0002', '0003', '0004', '0005', '0006']};
